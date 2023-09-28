@@ -1,9 +1,11 @@
 name: whisk-env
 
+channels:
+  - conda-forge
 dependencies:
   - python=3.9
   - numpy
   - typing
+  - root=6.26.06
   - pip:
-    - ROOT=6.26.06
     - git+https://github.com/blaze/dask.git#egg=dask[complete]
