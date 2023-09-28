@@ -13,8 +13,14 @@ from ROOT import RDataFrame
 from ROOT.Numba import Declare
 import whisk
 
+
+
+# To-do:
+# - Fix instability in generated sample
+
+
 def generate_rdataframe(categories):
-    
+
     rdf = RDataFrame(1000)
     
     colours = ["red", "yellow", "green", "blue"]
@@ -46,15 +52,18 @@ def test_recipe():
     rdf = generate_rdataframe(categories)
     rec = whisk.recipe(rdf, categories)
     
+    total = rdf.Count().GetValue()
+
+    print(rec["red"])
+    print(rec["triangle"])
     print(rec["red", "triangle"])
-    print(rec["triangle", "red"])
-    print(rec["blue", "triangle"])
-    print(rec["square", "red"])
-
-    print(rec)
-
-    assert True
-
+    #assert rec["red"] == rdf.Filter('colour == "red"').Count().GetValue() / total
+    #assert rec["triangle"] == rdf.Filter('shape == "triangle"').Count().GetValue() / total
+    #assert rec["red", "triangle"] == rdf.Filter('colour == "red" && shape == "triangle"').Count().GetValue() / total
+    #assert rec["triangle", "red"] == rdf.Filter('colour == "red" && shape == "triangle"').Count().GetValue() / total
+    #assert rec["blue", "triangle"] == rdf.Filter('colour == "blue" && shape == "triangle"').Count().GetValue() / total
+    #assert rec["square", "red"] == rdf.Filter('colour == "red" && shape == "shape"').Count().GetValue() / total
+    
 def dummy(rec):
     test_indices = (["red", "triangle"],
                     ["triangle", "red"],

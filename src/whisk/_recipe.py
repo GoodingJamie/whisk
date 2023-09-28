@@ -22,30 +22,59 @@ from ._whisk import _calculate_proportions
 #   []
 #   
 
-def recipe(
-    data: RDataFrame,
-    categories: Union[List[str], Dict[str, str]],
-    totals: bool = False,
+class recipe:
+    def __init__(
+                self,
+                data: RDataFrame,
+                categories: Union[List[str], Dict[str, str]],
+                totals: bool = False
+    ):
+        self.data = data
+        self.categories = categories
+        self.totals = totals
 
-):
-    proportions = defaultdict(dict)
-    keys = iterprod(*categories.values())
-    for key in keys:
-        filt = _parse_filter(categories, key)
-        assert filt != "", "Filter not parsed correctly."
-        count = data.Filter(filt).Count().GetValue()
-        value = count if totals else count / data.Count().GetValue()
-        for perm_key in permutations(key):
-            proportions[perm_key] = value
+        self._recipe()
 
-    return proportions
+    def __getitem__(self,
+                    key: Union[str, List[str]]):
+
+        values = []
+        if type(key) == str:
+            values = [self.proportions[proportions_key] for proportions_key in self.proportions.keys() if key in proportions_key]
+        else:
+            for proportions_key in self.proportions.keys():
+                if all([each_key in proportions_key for each_key in key]):
+                    values += [self.proportions[proportions_key]]
+        
+        for proportions_key in self.proportions.keys():
+            print(f"{key} | {proportions_key} | {key in proportions_key}")
+
+        print(values)
+
+        return sum(values)
+       
+
+        
+
+    def _recipe(self):
+        
+        self.proportions = defaultdict(dict)
+        keys = iterprod(*self.categories.values())
+        for key in keys:
+            filt = _parse_filter(self.categories, key)
+            assert filt != "", "Filter not parsed correctly."
+            count = self.data.Filter(filt).Count().GetValue()
+            value = count if self.totals else count / self.data.Count().GetValue()
+            self.proportions[key] = value
+
+        return
 
 def _parse_filter(
     categories: Dict[str, str],
     key : List[str]
 ):
     assert len(categories.keys()) == len(key), "Category list and possible keys are different length"
-    
+
     #assert all([sub_key in category for category, sub_key in zip(categories.items(), key)]), "Category list and possible keys do not match"
     filters = []
     for n, (category, sub_key) in enumerate(zip(categories.items(), key)):
