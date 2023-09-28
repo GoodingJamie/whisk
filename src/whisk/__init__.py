@@ -1,7 +1,18 @@
+###############################################################################
+# (c) Copyright 2023 CERN for the benefit of the LHCb Collaboration           #
+#                                                                             #
+# This software is distributed under the terms of the GNU General Public      #
+# Licence version 3 (GPL Version 3), copied verbatim in the file "COPYING".   #
+#                                                                             #
+# In applying this licence, CERN does not waive the privileges and immunities #
+# granted to it by virtue of its status as an Intergovernmental Organization  #
+# or submit itself to any jurisdiction.                                       #
+###############################################################################
+
 """Proportioned combination of RDataFrame data structures"""
 
 from ._whisk import whisk
-from ._table import table
-from ._version import version as __version__  # noqa
+from ._recipe import recipe
+#from ._version import version as __version__
 
-__all__ = ["whisk", "table"]
+__all__ = ["whisk", "recipe"]

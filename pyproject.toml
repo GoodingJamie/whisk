@@ -8,6 +8,10 @@ requires-python = ">=3.8"
 description = "Proportioned combination of RDataFrame data structures"
 authors = [{ name = "Jamie Gooding" }, { email = "Jamie.Gooding@cern.ch" }]
 dynamic = ["version"]
-dependencies = ["ROOT"]
 readme = "README.md"
 license = { file = "COPYING" }
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
