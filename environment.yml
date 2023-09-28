@@ -5,6 +5,5 @@ dependencies:
   - numpy
   - typing
   - pip:
-    - itertools
     - ROOT
     - git+https://github.com/blaze/dask.git#egg=dask[complete]
