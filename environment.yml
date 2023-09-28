@@ -2,10 +2,10 @@ name: whisk-env
 
 dependencies:
   - python=3.9
+  - collections
   - numpy
   - typing
   - pip:
-    - collections
     - itertools
     - ROOT
     - git+https://github.com/blaze/dask.git#egg=dask[complete]
