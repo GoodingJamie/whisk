@@ -5,5 +5,5 @@ dependencies:
   - numpy
   - typing
   - pip:
-    - ROOT
+    - ROOT=6.26.06
     - git+https://github.com/blaze/dask.git#egg=dask[complete]
