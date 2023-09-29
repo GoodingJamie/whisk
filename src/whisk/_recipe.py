@@ -9,14 +9,12 @@
 # or submit itself to any jurisdiction.                                       #
 ###############################################################################
 
-from collections import defaultdict
 from itertools import product as iterprod
 from itertools import permutations
 from numpy import prod
 from ROOT import RDataFrame
 from typing import Dict, List, Union
 
-from ._whisk import _calculate_proportions
 
 # Categories should look like
 #   []
@@ -64,7 +62,7 @@ class recipe:
 
     def _recipe(self):
 
-        self.proportions = defaultdict(dict)
+        self.proportions = {}
         keys = iterprod(*self.categories.values())
         for key in keys:
             filt = self._parse_filter(key)
