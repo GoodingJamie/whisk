@@ -9,30 +9,31 @@
 # or submit itself to any jurisdiction.                                       #
 ###############################################################################
 
+from itertools import product as iterprod
 from ROOT import RDataFrame
 from ROOT.Numba import Declare
+from typing import List, Union
 
 import whisk
-
 
 
 # To-do:
 # - Fix instability in generated sample
 
 
-def generate_rdataframe(categories):
+def generate_rdataframe(colours: Union[str, List[str]],
+                        shapes: Union[str, List[str]],
+                        size: int = 1000):
 
-    rdf = RDataFrame(1000)
+    rdf = RDataFrame(size)
     
-    colours = ["red", "yellow", "green", "blue"]
     rdf = rdf.Define("colour_idx", f"std::floor(gRandom->Rndm() * {len(colours)})")
     rdf = rdf.Define("colour",
                      f"""
                          std::vector<std::string> colours = {{"{'","'.join(colours)}"}};
                          return colours[colour_idx];
                      """)
-    
-    shapes = ["triangle", "rectangle", "square"]
+
     rdf = rdf.Define("shape_idx", f"std::floor(gRandom->Rndm() * {len(shapes)})")
     rdf = rdf.Define("shape",
                      f"""
@@ -43,35 +44,23 @@ def generate_rdataframe(categories):
     return rdf
 
 
+def test_whisk():
+    ref_categories = {
+        "colour" : ["red", "red", "red", "yellow", "yellow", "green", "blue"],
+        "shape" : ["triangle", "triangle", "rectangle", "square"],
+    }
+    ref_rdf = generate_rdataframe(ref_categories["colour"], ref_categories["shape"], size = 1000)
 
-
-def test_recipe():
-    categories = {
+    raw_categories = {
         "colour" : ["red", "yellow", "green", "blue"],
         "shape" : ["triangle", "rectangle", "square"],
     }
-    rdf = generate_rdataframe(categories)
-    rec = whisk.recipe(rdf, categories)
     
-    total = rdf.Count().GetValue()
-
-    print(rec["red"])
-    print(rec["triangle"])
-    print(rec["red", "triangle"])
-    #assert rec["red"] == rdf.Filter('colour == "red"').Count().GetValue() / total
-    #assert rec["triangle"] == rdf.Filter('shape == "triangle"').Count().GetValue() / total
-    #assert rec["red", "triangle"] == rdf.Filter('colour == "red" && shape == "triangle"').Count().GetValue() / total
-    #assert rec["triangle", "red"] == rdf.Filter('colour == "red" && shape == "triangle"').Count().GetValue() / total
-    #assert rec["blue", "triangle"] == rdf.Filter('colour == "blue" && shape == "triangle"').Count().GetValue() / total
-    #assert rec["square", "red"] == rdf.Filter('colour == "red" && shape == "shape"').Count().GetValue() / total
-    
-def dummy(rec):
-    test_indices = (["red", "triangle"],
-                    ["triangle", "red"],
-                    ["blue", "triangle"],
-                    ["square", "red"])
-    print()
-    for test_index in test_indices:
-        # [[lst[i] for i in pattern] for lst in a]
-        count = [[rec[i] for i in test_indices]]
-        print(f"{test_index}: {count}")
+    raw_rdfs = {}
+    for (colour, shape) in iterprod(*raw_categories.values()):
+        raw_rdfs[(colour,shape)] = generate_rdataframe(colour, shape, size=10000)
+    print(raw_rdfs["red", "triangle"])
+    print(raw_rdfs["red", "triangle"].Count().GetValue())
+    whisked_rdf = whisk.whisk(ref_rdf, raw_rdfs, raw_categories)
+    print(whisked_rdf.Count().GetValue())
+    print(whisked_rdf["red", "triangle"].Count().GetValue())
