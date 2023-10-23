@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "whisk"
 requires-python = ">=3.8"
-description = "Proportioned combination of RDataFrame data structures"
+description = "Proportioned combination of data structures"
 authors = [{ name = "Jamie Gooding" }, { email = "Jamie.Gooding@cern.ch" }]
 dynamic = ["version"]
 readme = "README.md"
