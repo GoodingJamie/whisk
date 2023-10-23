@@ -10,9 +10,9 @@
 ###############################################################################
 
 def table(
-    data: RDataFrame,
+    data,
     categories: Union[List[str], Dict[str, str]],
-    absolute:
+    absolute,
     output: bool = False,
     totals: bool = False,
 

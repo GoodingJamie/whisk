@@ -4,6 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.9
+  - numba
   - numpy
   - typing
   - root=6.26.06

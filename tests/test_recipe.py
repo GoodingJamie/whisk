@@ -9,62 +9,52 @@
 # or submit itself to any jurisdiction.                                       #
 ###############################################################################
 
-from ROOT import RDataFrame
-from ROOT.Numba import Declare
+import awkward as ak
+#import numba as nb
+import numpy as np
+
+from typing import List, Union
 
 import whisk
 
+#@nb.njit
+def generate_data(colours: Union[str, List[str]],
+                  shapes: Union[str, List[str]],
+                  size: int = 1000):
 
+    if type(colours) == str: colours = [colours]
+    if type(shapes) == str: shapes = [shapes]
 
-# To-do:
-# - Fix instability in generated sample
+    data = {}
 
+    data["colour"] = np.random.choice(colours, size=size)
+    data["shape"] = np.random.choice(shapes, size=size)
 
-def generate_rdataframe(categories):
-
-    rdf = RDataFrame(1000)
-    
-    colours = ["red", "yellow", "green", "blue"]
-    rdf = rdf.Define("colour_idx", f"std::floor(gRandom->Rndm() * {len(colours)})")
-    rdf = rdf.Define("colour",
-                     f"""
-                         std::vector<std::string> colours = {{"{'","'.join(colours)}"}};
-                         return colours[colour_idx];
-                     """)
-    
-    shapes = ["triangle", "rectangle", "square"]
-    rdf = rdf.Define("shape_idx", f"std::floor(gRandom->Rndm() * {len(shapes)})")
-    rdf = rdf.Define("shape",
-                     f"""
-                         std::vector<std::string> shapes = {{"{'","'.join(shapes)}"}};
-                         return shapes[shape_idx];
-                     """)
-
-    return rdf
-
-
-
+    return ak.Array(data)
 
 def test_recipe():
     categories = {
         "colour" : ["red", "yellow", "green", "blue"],
         "shape" : ["triangle", "rectangle", "square"],
     }
-    rdf = generate_rdataframe(categories)
-    rec = whisk.recipe(rdf, categories)
+    data = generate_data(*categories.values())
+    recipe = whisk.recipe(data, categories)
     
-    total = rdf.Count().GetValue()
+    total = len(data)#, axis=None)
+    print(total)
 
-    print(rec["red"])
-    print(rec["triangle"])
-    print(rec["red", "triangle"])
+    print(f"{recipe['red']:.4f} +/- {np.sqrt(recipe['red'] / total):.4f}")
+    print(f"{recipe['triangle']:.4f} +/- {np.sqrt(recipe['triangle'] / total):.4f}")
+    print(f"{recipe['red', 'triangle']:.4f} +/- {np.sqrt(recipe['red', 'triangle'] / total):.4f}")
     #assert rec["red"] == rdf.Filter('colour == "red"').Count().GetValue() / total
     #assert rec["triangle"] == rdf.Filter('shape == "triangle"').Count().GetValue() / total
     #assert rec["red", "triangle"] == rdf.Filter('colour == "red" && shape == "triangle"').Count().GetValue() / total
     #assert rec["triangle", "red"] == rdf.Filter('colour == "red" && shape == "triangle"').Count().GetValue() / total
     #assert rec["blue", "triangle"] == rdf.Filter('colour == "blue" && shape == "triangle"').Count().GetValue() / total
     #assert rec["square", "red"] == rdf.Filter('colour == "red" && shape == "shape"').Count().GetValue() / total
-    
+
+
+"""
 def dummy(rec):
     test_indices = (["red", "triangle"],
                     ["triangle", "red"],
@@ -75,3 +65,4 @@ def dummy(rec):
         # [[lst[i] for i in pattern] for lst in a]
         count = [[rec[i] for i in test_indices]]
         print(f"{test_index}: {count}")
+"""

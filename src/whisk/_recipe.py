@@ -9,12 +9,13 @@
 # or submit itself to any jurisdiction.                                       #
 ###############################################################################
 
-from itertools import product as iterprod
-from itertools import permutations
-from numpy import prod
-from ROOT import RDataFrame
-from typing import Dict, List, Union
+import awkward as ak
+import itertools as it
+import numba as nb
+import numpy as np
+import os
 
+from typing import Dict, List, Union
 
 # Categories should look like
 #   []
@@ -23,14 +24,15 @@ from typing import Dict, List, Union
 class recipe:
     def __init__(
         self,
-        data: RDataFrame,
+        data,
         categories: Union[List[str], Dict[str, str]],
         totals: bool = False
     ):
         self.data = data
         self.categories = categories
         self.default_to_fractions = not(totals)
-        self.total_events = data.Count().GetValue()
+        self.total_events = len(data)
+        self.maximum = 0
 
         self._recipe()
 
@@ -49,26 +51,28 @@ class recipe:
 
         return sum(values)
 
-    def _parse_filter(
+    #def max(
+    #    self
+    #):
+    #    return self.maximum
+
+    def _filter(
         self,
         key : List[str]
     ):
         assert len(self.categories.keys()) == len(key), "Category list and possible keys are different length"
-
-        filters = [f'{category[0]} == "{sub_key}"' for category, sub_key in zip(self.categories.items(), key)]
-
-        assert len(filters) > 0, "Filter not parsed correctly."
-        return " && ".join(filters)
+        return np.logical_and.reduce([self.data[category[0]] == sub_key for category, sub_key in zip(self.categories.items(), key)])
 
     def _recipe(self):
 
         self.proportions = {}
-        keys = iterprod(*self.categories.values())
+        keys = it.product(*self.categories.values())
         for key in keys:
-            filt = self._parse_filter(key)
-            count = self.data.Filter(filt).Count().GetValue()
-            value = count / self.data.Count().GetValue() if self.default_to_fractions else count
+            filt = self._filter(key)
+            count = len(self.data[filt])
+            value = count / self.total_events if self.default_to_fractions else count
             self.proportions[key] = value
+            if value > self.maximum: self.maximum = value
 
 
     def _convert_to_fractions(self):

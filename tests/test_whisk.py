@@ -9,58 +9,53 @@
 # or submit itself to any jurisdiction.                                       #
 ###############################################################################
 
-from itertools import product as iterprod
-from ROOT import RDataFrame
-from ROOT.Numba import Declare
+import awkward as ak
+import itertools as it
+#import numba as nb
+import numpy as np
+
 from typing import List, Union
 
 import whisk
 
 
+
 # To-do:
 # - Fix instability in generated sample
 
+def generate_data(colours: Union[str, List[str]],
+                  shapes: Union[str, List[str]],
+                  size: int = 1000):
 
-def generate_rdataframe(colours: Union[str, List[str]],
-                        shapes: Union[str, List[str]],
-                        size: int = 1000):
+    if type(colours) == str: colours = [colours]
+    if type(shapes) == str: shapes = [shapes]
 
-    rdf = RDataFrame(size)
-    
-    rdf = rdf.Define("colour_idx", f"std::floor(gRandom->Rndm() * {len(colours)})")
-    rdf = rdf.Define("colour",
-                     f"""
-                         std::vector<std::string> colours = {{"{'","'.join(colours)}"}};
-                         return colours[colour_idx];
-                     """)
+    data = {}
 
-    rdf = rdf.Define("shape_idx", f"std::floor(gRandom->Rndm() * {len(shapes)})")
-    rdf = rdf.Define("shape",
-                     f"""
-                         std::vector<std::string> shapes = {{"{'","'.join(shapes)}"}};
-                         return shapes[shape_idx];
-                     """)
+    data["colour"] = np.random.choice(colours, size=size)
+    data["shape"] = np.random.choice(shapes, size=size)
 
-    return rdf
-
+    return ak.Array(data)
 
 def test_whisk():
     ref_categories = {
         "colour" : ["red", "red", "red", "yellow", "yellow", "green", "blue"],
         "shape" : ["triangle", "triangle", "rectangle", "square"],
     }
-    ref_rdf = generate_rdataframe(ref_categories["colour"], ref_categories["shape"], size = 1000)
+    ref_data = generate_data(ref_categories["colour"], ref_categories["shape"], size = 1000)
 
     raw_categories = {
         "colour" : ["red", "yellow", "green", "blue"],
         "shape" : ["triangle", "rectangle", "square"],
     }
     
-    raw_rdfs = {}
-    for (colour, shape) in iterprod(*raw_categories.values()):
-        raw_rdfs[(colour,shape)] = generate_rdataframe(colour, shape, size=10000)
-    print(raw_rdfs["red", "triangle"])
-    print(raw_rdfs["red", "triangle"].Count().GetValue())
-    whisked_rdf = whisk.whisk(ref_rdf, raw_rdfs, raw_categories)
-    print(whisked_rdf.Count().GetValue())
-    print(whisked_rdf["red", "triangle"].Count().GetValue())
+    raw_data = {}
+    for (colour, shape) in it.product(*raw_categories.values()):
+        rd = generate_data(colour, shape, size=10000)
+        raw_data[(colour,shape)] = rd
+
+    print(len(raw_data["red", "triangle"]))
+    whisked_data = whisk.whisk(ref_data, raw_data, raw_categories)
+    print(len(whisked_data[whisked_data["colour"] == "red"]))
+    print(len(whisked_data[whisked_data["shape"] == "rectangle"]))
+    print(len(whisked_data[np.logical_and(whisked_data["colour"] == "red", whisked_data["shape"] == "rectangle")]))

@@ -9,55 +9,21 @@
 # or submit itself to any jurisdiction.                                       #
 ###############################################################################
 
+import awkward as ak
+import numba as nb
+import numpy as np
 import os
-
-from ROOT import RDataFrame
-from tempfile import TemporaryDirectory
 from typing import Dict, List, Union
 
 from ._recipe import recipe
 
 def whisk(
-    reference_data: RDataFrame,
-    combining_data: Dict[Union[str, List[str]], RDataFrame],
+    reference_data,
+    combining_data,#: Dict[Union[str, List[str]], ],
     categories: Union[List[str], Dict[str, str]],
 ):
 
     reference_recipe = recipe(reference_data, categories)
-    cdfs = []
-    with TemporaryDirectory() as tmpdir:
-        for n, (key, cdf) in enumerate(combining_data.items()):
-            cdf_path = os.path.join(
-                tmpdir,
-                f"combining_dataframe{n}.root"
-            )
-            cdf.Snapshot("temp_tree", cdf_path)
-            cdfs += [cdf_path]
-        whisked_data = RDataFrame("temp_tree", cdfs)
+    combine_data = (data[np.random.rand(len(data)) < reference_recipe[categories] / reference_recipe.maximum] for categories, data in combining_data.items())
 
-    return whisked_data
-
-def _calculate_proportions(
-    data: RDataFrame,
-    categories: Union[List[str], Dict[str, str]]
-):
-    proportions = {}
-    if type(categories) == list:
-        return
-
-    for category, values in categories:
-        for value in values:
-            proportions.extend({
-                category:  {
-                    "total" : data.Filter(f"{category} == {value}").Count().getValue()
-                }
-            })
-
-    return
-
-    {
-        "red" : {
-            "total" : 1,
-            "square" : {"total": 1}
-        }
-    }
+    return ak.concatenate(combine_data)
